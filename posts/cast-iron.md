@@ -5,7 +5,8 @@ As Sarah was laying in her bed, turning and tossing unable to reach dreamland, w
 ```scala
 size_t find(vec: const std.vector[int]&, item: int){
   auto it = std.find(vec.begin(), vec.end(), item);
-  if(it == vec.end()) return size_t.max;
+  if(it == vec.end())
+    return size_t.max;
   return std.distance(vec.begin(), it);
 }
 ```
@@ -50,25 +51,25 @@ Not particularly, moreover in this form we can use the precondition and omit an 
 Oh boy! Look at all that runtime we just saved, `-250 ns`..., 😑. Something smells fishy here. Lets look at the assembly. 
 
 ```scala
-	movq	(%rdi), %rcx
-	movq	$-1, %rax
+  movq	(%rdi), %rcx
+  movq	$-1, %rax
 loop:
-	cmpl	%esi, 4(%rcx,%rax,4)
-	leaq	1(%rax), %rax
-	jne	loop
-	retq
+  cmpl	%esi, 4(%rcx,%rax,4)
+  leaq	1(%rax), %rax
+  jne	loop
+  retq
 ```
 
 For some reason her brain, which is equivalent to clang 12.0.0, decided to use `leaq` to increment `%rax` instead of `incq` as in the original checked loop. And sure enough fiddling a bit with the assembly produces the same speed as the original.
 
 ```scala
-	movq	(%rdi), %rcx
-	movq	$-1, %rax
+  movq	(%rdi), %rcx
+  movq	$-1, %rax
 loop:
   incq %rax
-	cmpl	%esi, (%rcx,%rax,4)
-	jne	loop
-	retq
+  cmpl	%esi, (%rcx,%rax,4)
+  jne	loop
+  retq
 ```
 
 (Notice we must move `incq` before the check, as this instruction does not preserve the status flags.)
@@ -83,7 +84,7 @@ Our little loop is nice and compact. Let's make it horrendous but fast(er).
 size_t find(vec: const std.vector[int]&, item: int){
   for(size_t idx = 0;;){
     if(vec[idx++] == item) return idx - 1;
-		if(vec[idx++] == item) return idx - 1;
+    if(vec[idx++] == item) return idx - 1;
   }
 }
 ```
@@ -99,7 +100,7 @@ Can we unroll more and achieve better results? One could always try but in this 
 Time to bring out the big guns: hand-written assembly. Unmaintainable. Not in the hot path. We are going to be the future git-blame king. Let's do it!
 
 ```scala
-	xorl	%eax, %eax
+  xorl	%eax, %eax
   movq	(%rdi), %rcx
 loop:
   cmpl	%esi, (%rcx,%rax,4)
@@ -158,7 +159,7 @@ size_t find(vec: const std.vector[int] &, item: int)
     auto result = _mm256_movemask_ps(_mm256_castsi256_ps(cmp_res));
     if (result) {
       return idx * 8 + __builtin_ctz(result);
-		}
+    }
   }
 }
 ```
@@ -176,7 +177,7 @@ Sarah at this moment is on the verge of slipping away. Could we do something mor
 I promised you no assembly, and as it turns out that was a big fat lie.
 
 ```scala
-vmovd	%esi, %xmm0
+  vmovd	%esi, %xmm0
   vpbroadcastd	%xmm0, %ymm0
   movq	(%rdi), %rax
 loop:
