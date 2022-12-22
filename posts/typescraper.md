@@ -36,7 +36,7 @@ let y: HasF = x  // no compile error here
 
 ### Higher-order types
 
-With type constructors or higher-order types you could really feel like Frankenstein, cooking up abominations in your lavatory<sup>1</sup>. 
+With type constructors or higher-order types you could really feel like Frankenstein, cooking up abominations in your lab. 
 
 ```scala
 class stack[T]{
@@ -137,7 +137,3 @@ Okay, maybe not the best example, but boy do I want to drink a hot cocoa now.
 
 <br>
 <br>
-
----
-
-[1]: Laboratory, made you look, didn't I.
